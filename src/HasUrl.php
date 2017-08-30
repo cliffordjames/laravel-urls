@@ -11,6 +11,8 @@ trait HasUrl
     protected $baseRoute;
 
     /**
+     * Return route based on de model.
+     *
      * @param string $name
      * @param array $parameters
      *
@@ -38,6 +40,14 @@ trait HasUrl
         return $this->baseRoute;
     }
 
+    /**
+     * Fill in the route parameters with the correct models.
+     *
+     * @param string $route
+     * @param array $givenParameters
+     *
+     * @return array
+     */
     protected function getRouteParameters($route, $givenParameters)
     {
         $route = app('router')->getRoutes()->getByName($route);

@@ -1,6 +1,6 @@
 {
     "name": "cliffordjames/laravel-urls",
-    "description": "Url trait for Eloquent model",
+    "description": "Url trait for Eloquent models",
     "require": {
         "php": "^7.0"
     },
