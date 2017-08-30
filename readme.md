@@ -51,13 +51,17 @@ class User extends Authenticatable
 }
 ```
 
- And you can generate the url to this route by using the traits `url()` function:
- 
- ```php
- User::first()->url(); // -> /users/1
- ```
+And you can generate the url to this route by using the traits `url()` function:
 
-### Resources routes ###
+```php
+$user = User::first();
+//
+$user->url(); // -> /users/1
+// vs
+route('users.show', $user); // -> /users/1
+```
+
+### Resource routes ###
 You can specify the route name as the first parameter in de `url()` function:
 
 ```php
@@ -86,7 +90,9 @@ $thread->url(); // -> /threads/*channel_id*/*thread_id*
 $thread->url($thread->channel); // same as above
 $thread->url($thread, $thread->channel); // same as above
 $thread->url([$thread, $thread->channel]); // same as above
-$thread->url(['thread' => $thread, 'channel' => $thread->channel]);
+$thread->url(['thread' => $thread, 'channel' => $thread->channel]); // same as above
+
+route('threads.show', ['thread' => $thread, 'channel' => $thread->channel]); // same as above
 ```
 
 ## Configurations ##
