@@ -1,0 +1,15 @@
+{
+    "name": "cliffordjames/laravel-urls",
+    "description": "Url trait for Eloquent model",
+    "require": {
+        "php": "^7.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Clifford James van den Bos",
+            "email": "clifford.james@me.com"
+        }
+    ],
+    "minimum-stability": "dev"
+}
