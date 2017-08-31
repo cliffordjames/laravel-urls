@@ -72,7 +72,7 @@ $user = User::first();
 $user->url(); // -> /users/1
 $user->url('show'); // -> /users/1
 $user->url('edit'); // -> /users/1/edit
-$usee->url('update'); // -> /users/1
+$user->url('update'); // -> /users/1
 ...
 ```
 
@@ -96,7 +96,7 @@ route('threads.show', ['thread' => $thread, 'channel' => $thread->channel]); // 
 ```
 
 ## Configurations ##
-There is one one configuration you can do for now and its setting the `$baseRoute` on the model itself, it defaults to the same how the table name for a model is generated.
+There is only one configuration you can do for now and it is setting the `$baseRoute` on the model itself, it defaults to the same method of how the table name for a model is generated.
 
 `User` model example, when not set it defaults to `user`:
 
