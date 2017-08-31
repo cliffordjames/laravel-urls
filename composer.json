@@ -11,5 +11,10 @@
             "email": "clifford.james@me.com"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "CliffordJames\\LaravelUrls\\": "src"
+        }
+    },
     "minimum-stability": "dev"
 }

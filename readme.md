@@ -23,7 +23,7 @@ All you have to do is add the trait to the User model:
 
 namespace App;
 
-use cliffordjames\LaravelUrls\HasUrl;
+use CliffordJames\LaravelUrls\HasUrl;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 

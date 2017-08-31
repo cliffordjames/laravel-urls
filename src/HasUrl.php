@@ -1,6 +1,6 @@
 <?php
 
-namespace cliffordjames\LaravelUrls;
+namespace CliffordJames\LaravelUrls;
 
 use Illuminate\Contracts\Routing\UrlRoutable;
 use Illuminate\Database\Eloquent\Model;
