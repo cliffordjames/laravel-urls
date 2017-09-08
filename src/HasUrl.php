@@ -13,17 +13,32 @@ trait HasUrl
     /**
      * Return route based on de model.
      *
-     * @param string $name
+     * @param null|string $routeName
      * @param array $parameters
      *
      * @return string
      */
-    public function url($name = 'show', ...$parameters)
+    public function url($routeName = null, ...$parameters)
     {
-        $routeName = "{$this->getBaseRoute()}.{$name}";
-        $parameters = $this->getRouteParameters($routeName, $parameters);
+        $route = $this->route($routeName);
 
-        return route($routeName, $parameters);
+        $parameters = $this->getRouteParameters($route, $parameters);
+
+        return route($route, $parameters);
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return string
+     */
+    public function route($name = null)
+    {
+        if (is_null($name)) {
+            $name = 'show';
+        }
+
+        return "{$this->getBaseRoute()}.{$name}";
     }
 
     /**
