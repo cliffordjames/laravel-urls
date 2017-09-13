@@ -3,8 +3,8 @@
 namespace CliffordJames\LaravelUrls;
 
 use Illuminate\Contracts\Routing\UrlRoutable;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 trait HasUrl
 {
@@ -13,14 +13,14 @@ trait HasUrl
     /**
      * Return route based on de model.
      *
-     * @param null|string $routeName
+     * @param null|string $route
      * @param array $parameters
      *
      * @return string
      */
-    public function url($routeName = null, ...$parameters)
+    public function url($route = null, ...$parameters)
     {
-        $route = $this->route($routeName);
+        $route = $this->route($route);
 
         $parameters = $this->getRouteParameters($route, $parameters);
 
@@ -34,11 +34,7 @@ trait HasUrl
      */
     public function route($name = null)
     {
-        if (is_null($name)) {
-            $name = 'show';
-        }
-
-        return "{$this->getBaseRoute()}.{$name}";
+        return $this->getBaseRoute() . '.' . ($name ?: 'show');
     }
 
     /**
@@ -46,7 +42,7 @@ trait HasUrl
      *
      * @return string
      */
-    public function getBaseRoute()
+    protected function getBaseRoute()
     {
         if (!isset($this->baseRoute)) {
             $this->baseRoute = str_replace('\\', '', Str::snake(Str::plural(class_basename($this))));
@@ -55,68 +51,71 @@ trait HasUrl
         return $this->baseRoute;
     }
 
+    protected function getRouteObject($name)
+    {
+        if (! is_null($route = app('router')->getRoutes()->getByName($name))) {
+            return $route;
+        }
+
+        throw new InvalidArgumentException("Route [{$name}] not defined.");
+    }
+
     /**
      * Fill in the route parameters with the correct models.
      *
-     * @param string $route
-     * @param array $givenParameters
+     * @param string $name
+     * @param array  $parameters
      *
      * @return array
      */
-    protected function getRouteParameters($route, $givenParameters)
+    protected function getRouteParameters($name, $parameters)
     {
-        $route = app('router')->getRoutes()->getByName($route);
-
-        // If the parameters are passed as an array rather than individual
-        // parameters, reformat the parameters array.
-        if (count($givenParameters) == 1 && is_array($givenParameters[0])) {
-            $givenParameters = $givenParameters[0];
-        }
-
-        $givenParameters = collect($givenParameters)->push($this);
+        $parameters = $this->formatRouteParameters($parameters);
 
         // Get the parameters given in the route and directly assign parameters
         // which are passed with a name.
-        $routeParameters = collect($route->signatureParameters(UrlRoutable::class))
-            ->mapWithKeys(function ($parameter) use ($givenParameters) {
-                $parameterName = $parameter->getName();
-                $parameterValue = $givenParameters->get(
-                    $parameterName,
-                    $parameter->getType()->getName()
-                );
+        $signatureParameters = collect(
+            $this->getRouteObject($name)->signatureParameters(UrlRoutable::class)
+        );
 
-                return [$parameterName => $parameterValue];
+        return $signatureParameters->mapWithKeys(function ($parameter) use ($parameters) {
+            $name = $parameter->getName();
+            $type = $parameter->getType()->getName();
+
+            // Named parameters from input.
+            if ($found = $parameters->get($name)) {
+                return [$name => $found];
+            }
+
+            // Search for matching class names.
+            $found = $parameters->search(function ($parameter) use ($type) {
+                return get_class($parameter) == $type;
             });
 
-        // Loop over the passed parameters with an unknown link (numeric index)
-        // and check if the class name exists in the route parameters. If so,
-        // assign the parameter.
-        $givenParameters->each(function ($parameter, $key) use ($routeParameters) {
-            if (!is_numeric($key)) {
-                return;
+            if ($found !== false) {
+                return [$name => $parameters->get($found)];
             }
 
-            if ($found = $routeParameters->search(get_class($parameter))) {
-                $routeParameters[$found] = $parameter;
+            // Search for matching relation.
+            if (($relation = $this->$name) instanceof UrlRoutable) {
+                return [$name => $relation];
             }
-        });
+        })->all();
+    }
 
-        // Loop over the route parameters to see if there are any unlinked
-        // parameters and look if they can be linked to a relation.
-        $routeParameters = $routeParameters->map(function ($parameter, $name) {
-            // Parameters which are already linked can be skipped.
-            if ($parameter instanceof Model) {
-                return $parameter;
-            }
+    /**
+     * @param $parameters
+     *
+     * @return $this
+     */
+    protected function formatRouteParameters($parameters)
+    {
+        // If the parameters are passed as an array rather than individual
+        // parameters, reformat the parameters array.
+        if (count($parameters) == 1 && is_array($parameters[0])) {
+            $parameters = $parameters[0];
+        }
 
-            // Parameter exists as a relation.
-            if (($relation = $this->$name) instanceof Model) {
-                return $relation;
-            }
-
-            return null;
-        });
-
-        return $routeParameters->filter()->all();
+        return collect($parameters)->push($this);
     }
 }

@@ -33,10 +33,23 @@ class UrlTest extends TestCase
 
     protected function createSchema()
     {
-        $this->schema('default')->create('users', function ($table) {
+        $this->schema()->create('users', function ($table) {
             $table->increments('id');
-            $table->string('name')->nullable();
+            $table->string('name');
             $table->string('email');
+            $table->timestamps();
+        });
+
+        $this->schema()->create('channels', function ($table) {
+            $table->increments('id');
+            $table->string('slug');
+            $table->timestamps();
+        });
+
+        $this->schema()->create('threads', function ($table) {
+            $table->increments('id');
+            $table->unsignedInteger('channel_id');
+            $table->string('slug');
             $table->timestamps();
         });
     }
@@ -67,6 +80,14 @@ class UrlTest extends TestCase
         $this->assertEquals('profiles.show', $user->route());
         $this->assertEquals('profiles.show', $user->route('show'));
         $this->assertEquals('profiles.edit', $user->route('edit'));
+    }
+
+    public function testUsingNonExistentRouteNameWillThrowAnException()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $user = new User;
+        $user->url('foobar');
     }
 
     public function testDefaultBaseRouteUrl()
@@ -129,12 +150,52 @@ class UrlTest extends TestCase
         $this->assertEquals(url('users/CliffordJames/edit'), $user->url('edit'));
     }
 
-    /**
-     * Helpers...
-     */
+    public function testDefaultBaseRouteUrlWithMultipleParameters()
+    {
+        Route::get('threads/{channel}/{thread}', function (Channel $channel, Thread $thread) { })->name('threads.show');
+
+        app('router')->getRoutes()->refreshNameLookups();
+
+        $channel = Channel::create([
+            'id' => 1,
+            'slug' => 'laravel',
+        ]);
+
+        $thread = Thread::create([
+            'id' => 10,
+            'channel_id' => $channel->id,
+            'slug' => 'testing-trait',
+        ]);
+
+        $this->assertEquals('threads.show', $thread->route());
+        $this->assertEquals(url('threads/1/10'), $thread->url());
+    }
+
+    public function testDifferentRouteKeyNameUrlWithMultipleParameters()
+    {
+        Route::get('threads/{channel}/{thread}', function (ChannelWithDifferentRouteKeyName $channel, ThreadWithDifferentRouteKeyName $thread) { })->name('threads.show');
+
+        app('router')->getRoutes()->refreshNameLookups();
+
+        $channel = ChannelWithDifferentRouteKeyName::create([
+            'id' => 1,
+            'slug' => 'laravel',
+        ]);
+
+        $thread = ThreadWithDifferentRouteKeyName::create([
+            'id' => 10,
+            'channel_id' => $channel->id,
+            'slug' => 'testing-trait',
+        ]);
+
+        $this->assertEquals('threads.show', $thread->route());
+        $this->assertEquals(url('threads/laravel/testing-trait'), $thread->url());
+    }
 
     /**
      * Get a database connection instance.
+     *
+     * @param string $connection
      *
      * @return \Illuminate\Database\Connection
      */
@@ -145,6 +206,8 @@ class UrlTest extends TestCase
 
     /**
      * Get a schema builder instance.
+     *
+     * @param string $connection
      *
      * @return \Illuminate\Database\Schema\Builder
      */
@@ -178,5 +241,53 @@ class UserWithDifferentRouteKeyName extends User
     public function getRouteKeyName()
     {
         return 'name';
+    }
+}
+
+class Channel extends Model
+{
+    use HasUrl;
+
+    protected $guarded = [];
+
+    protected $table = 'channels';
+}
+
+class ChannelWithDifferentRouteKeyName extends Channel
+{
+    protected $baseRoute = 'threads';
+
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
+}
+
+class Thread extends Model
+{
+    use HasUrl;
+
+    protected $guarded = [];
+
+    protected $table = 'threads';
+
+    public function channel()
+    {
+        return $this->belongsTo(Channel::class);
+    }
+}
+
+class ThreadWithDifferentRouteKeyName extends Thread
+{
+    protected $baseRoute = 'threads';
+
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
+
+    public function channel()
+    {
+        return $this->belongsTo(ChannelWithDifferentRouteKeyName::class);
     }
 }
