@@ -8,8 +8,6 @@ use InvalidArgumentException;
 
 trait HasUrl
 {
-    protected $baseRoute;
-
     /**
      * Return route based on de model.
      *

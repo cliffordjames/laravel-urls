@@ -31,29 +31,6 @@ class UrlTest extends TestCase
         $this->createSchema();
     }
 
-    protected function createSchema()
-    {
-        $this->schema()->create('users', function ($table) {
-            $table->increments('id');
-            $table->string('name');
-            $table->string('email');
-            $table->timestamps();
-        });
-
-        $this->schema()->create('channels', function ($table) {
-            $table->increments('id');
-            $table->string('slug');
-            $table->timestamps();
-        });
-
-        $this->schema()->create('threads', function ($table) {
-            $table->increments('id');
-            $table->unsignedInteger('channel_id');
-            $table->string('slug');
-            $table->timestamps();
-        });
-    }
-
     /**
      * Tear down the database schema.
      *
@@ -62,6 +39,8 @@ class UrlTest extends TestCase
     public function tearDown()
     {
         $this->schema('default')->drop('users');
+        $this->schema('default')->drop('channels');
+        $this->schema('default')->drop('threads');
     }
 
     public function testDefaultBaseRoute()
@@ -86,8 +65,7 @@ class UrlTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
 
-        $user = new User;
-        $user->url('foobar');
+        (new User)->url('foobar');
     }
 
     public function testDefaultBaseRouteUrl()
@@ -214,6 +192,29 @@ class UrlTest extends TestCase
     protected function schema($connection = 'default')
     {
         return $this->connection($connection)->getSchemaBuilder();
+    }
+
+    protected function createSchema()
+    {
+        $this->schema()->create('users', function ($table) {
+            $table->increments('id');
+            $table->string('name');
+            $table->string('email');
+            $table->timestamps();
+        });
+
+        $this->schema()->create('channels', function ($table) {
+            $table->increments('id');
+            $table->string('slug');
+            $table->timestamps();
+        });
+
+        $this->schema()->create('threads', function ($table) {
+            $table->increments('id');
+            $table->unsignedInteger('channel_id');
+            $table->string('slug');
+            $table->timestamps();
+        });
     }
 }
 
